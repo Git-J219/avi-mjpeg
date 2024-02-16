@@ -3,9 +3,9 @@ type FunctionPropertyNames<T> = {
 }[keyof T];
 
 export type BufferReaderObjectDefinition = {
-  t: FunctionPropertyNames<BufferReader>,
-  a?: any[],
-  k?: string
+  t: FunctionPropertyNames<BufferReader>;
+  a?: any[];
+  k?: string;
 };
 
 export class BufferReader {
@@ -68,4 +68,4 @@ export class BufferReader {
   ended() {
     return this.position >= this._buffer.length;
   }
-};
+}

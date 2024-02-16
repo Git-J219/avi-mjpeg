@@ -5,7 +5,7 @@ import { DefaultListReader, ListChunk } from "./riff";
 function checkEnded(reader: BufferReader, chunk: string) {
   if (!reader.ended())
     throw new Error(
-      `Data after expected end of chunk in ${chunk} (read ${reader.position} of ${reader._buffer.length})`
+      `Data after expected end of chunk in ${chunk} (read ${reader.position} of ${reader._buffer.length})`,
     );
 }
 
@@ -40,7 +40,7 @@ export class avihChunk extends Chunk {
     return `${" ".repeat(n)}'${this.chunkId}'(${this.microSecPerFrame} us/f, ${
       this.maxBytesPerSec
     } max B/s, ${this.paddingGranularity} padding, 0x${this.flags.toString(
-      16
+      16,
     )}, ${this.totalFrames} total frames, ${
       this.initialFrames
     } initial frames, ${this.streams} streams, ${
@@ -83,7 +83,7 @@ export class strhChunk extends Chunk {
       { t: "word", k: "left" },
       { t: "word", k: "top" },
       { t: "word", k: "right" },
-      { t: "word", k: "bottom" }
+      { t: "word", k: "bottom" },
     );
     checkEnded(this._reader, "strhChunk");
     delete this._reader;
@@ -125,7 +125,7 @@ export class strfBITMAPINFOChunk extends Chunk {
     this.compression = this._reader.obj(
       { k: "numeric", t: "dword" },
       { t: "skip", a: [-4] },
-      { k: "fourcc", t: "fourcc" }
+      { k: "fourcc", t: "fourcc" },
     );
     this.sizeImage = this._reader.dword();
     this.xPelsPerMeter = this._reader.long();
@@ -168,7 +168,7 @@ export class hdrlListReader extends DefaultListReader {
   onEnd() {
     if (this.#streams)
       console.warn(
-        "Stream count does not match with actual count: " + this.#streams
+        "Stream count does not match with actual count: " + this.#streams,
       );
   }
   describeStreams(n = 0) {
@@ -231,7 +231,7 @@ export class strlListReader extends DefaultListReader {
 export type FrameData = {
   data: Uint8Array;
   type: string;
-}
+};
 
 class moviListReader extends DefaultListReader {
   streams: Record<number, FrameData[]>;
@@ -271,17 +271,21 @@ export function registerAllListParsers(registration: typeof listRegistration) {
 }
 
 export type AVIDescriptor = {
-  hdrl: hdrlListReader,
-  movi: moviListReader
+  hdrl: hdrlListReader;
+  movi: moviListReader;
 };
 
 export function extractImportantFromParsed(riff: ListChunk) {
   const important: AVIDescriptor = {} as AVIDescriptor;
-  important.hdrl = (riff.findChunkByFilter(
-    (v) => (v as ListChunk).listReader instanceof hdrlListReader
-  ) as ListChunk).listReader as hdrlListReader;
-  important.movi = (riff.findChunkByFilter(
-    (v) => (v as ListChunk).listReader instanceof moviListReader
-  ) as ListChunk).listReader as moviListReader;
+  important.hdrl = (
+    riff.findChunkByFilter(
+      (v) => (v as ListChunk).listReader instanceof hdrlListReader,
+    ) as ListChunk
+  ).listReader as hdrlListReader;
+  important.movi = (
+    riff.findChunkByFilter(
+      (v) => (v as ListChunk).listReader instanceof moviListReader,
+    ) as ListChunk
+  ).listReader as moviListReader;
   return important;
 }

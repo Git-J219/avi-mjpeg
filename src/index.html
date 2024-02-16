@@ -1,11 +1,34 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style id="pageSelection">
+      .controls {
+        display: none;
+      }
+    </style>
+    <style>
+      * {
+        user-select: none;
+      }
+    </style>
     <title>AVI-Player mit MJPEG-Unterstützung</title>
   </head>
   <body>
-    <input type="file" id="filePicker" /><img id="contentFrame" /><button id="playPause" type="button">Play</button><span id="progressInfo">00:00/00:00</span>
+    <noscript
+      >This won't work without JavaScript, the rest of this page might look
+      broken</noscript
+    >
+    <div class="main">
+      <img id="contentFrame" />
+    </div>
+    <div class="controls">
+      Controls page
+      <span id="progress">0:00/0:00</span>
+      <button id="playPause" type="button">Play</button>
+      <button id="loop" type="button">Enable looping</button>
+      <input type="file" id="filePicker" />
+    </div>
   </body>
 </html>

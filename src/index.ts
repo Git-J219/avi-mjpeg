@@ -6,15 +6,17 @@ import {
   strlListReader,
   FrameData,
 } from "./avi";
+import { initControls } from "./controls";
 import { ListChunk, chunkRegistration, listRegistration } from "./riff";
 
 registerAllChunks(chunkRegistration);
 registerAllListParsers(listRegistration);
 
-declare type PlaybackStatus = {
+export type PlaybackStatus = {
   playing: boolean;
   currentTime: number;
   completedTime: number;
+  looping: boolean;
 };
 
 class VideoPlayer {
@@ -27,10 +29,17 @@ class VideoPlayer {
   loop: boolean;
   #completedTime: number;
   #statusCb: (e: PlaybackStatus) => void;
+  #lastStatus: PlaybackStatus;
   constructor(canvas: HTMLImageElement) {
     this.#canvas = canvas;
     this.doPlayback = this.doPlayback.bind(this);
     this.#statusCb = () => {};
+    this.#lastStatus = {
+      completedTime: 0,
+      currentTime: 0,
+      looping: false,
+      playing: false,
+    };
   }
   loadFile(aviDescriptor: AVIDescriptor) {
     this.#currentDescriptor = aviDescriptor;
@@ -42,15 +51,15 @@ class VideoPlayer {
         return v.header.header.type === "vids";
       });
     this.#completedTime =
-      this.#currentDescriptor.hdrl.mainHeader.totalFrames *
-      this.#currentDescriptor.hdrl.mainHeader.microSecPerFrame /
+      (this.#currentDescriptor.hdrl.mainHeader.totalFrames *
+        this.#currentDescriptor.hdrl.mainHeader.microSecPerFrame) /
       1000;
     this.seek(0);
   }
   displayFrameByTime(currentTimeMs: number) {
     const frameNum = Math.floor(
       currentTimeMs /
-        (this.#currentDescriptor.hdrl.mainHeader.microSecPerFrame / 1000)
+        (this.#currentDescriptor.hdrl.mainHeader.microSecPerFrame / 1000),
     );
     return this.displayFrameByNum(frameNum);
   }
@@ -67,30 +76,33 @@ class VideoPlayer {
   doPlayback(timestamp: DOMHighResTimeStamp) {
     if (this.doStop) {
       this.#lastTimestamp = undefined;
-      this.#statusCb({
+      this.sendStatus({
         completedTime: this.#completedTime,
         currentTime: this.#playbackTime,
-        playing: false
+        playing: false,
+        looping: this.loop,
       });
       return;
     }
     if (this.#lastTimestamp) {
-      this.#statusCb({
+      this.sendStatus({
         completedTime: this.#completedTime,
         currentTime: this.#playbackTime,
-        playing: true
+        playing: true,
+        looping: this.loop,
       });
       const delta = timestamp - this.#lastTimestamp; // in ms
       this.#playbackTime += delta;
       if (!this.displayFrameByTime(this.#playbackTime)) {
-        this.#playbackTime = 0; // do not use seek -> stays on last frame, but play starts from start
+        this.#playbackTime = 0; // do not use seek -> image stays on last frame, but play starts from start
         if (!this.loop) {
           this.doStop = true;
           this.#lastTimestamp = undefined;
-          this.#statusCb({
+          this.sendStatus({
             completedTime: this.#completedTime,
             currentTime: this.#completedTime,
-            playing: false
+            playing: false,
+            looping: this.loop,
           });
           return;
         }
@@ -115,20 +127,37 @@ class VideoPlayer {
     this.#playbackTime = position;
     if (this.doStop) {
       this.displayFrameByTime(this.#playbackTime);
-      this.#statusCb({
+      this.sendStatus({
         completedTime: this.#completedTime,
         currentTime: this.#playbackTime,
-        playing: false
+        playing: false,
+        looping: this.loop,
       });
     }
   }
 
-  playPause() {
+  pause() {
+    this.stopPlayback();
+  }
+
+  play() {
+    this.startPlayback();
+  }
+
+  sendStatus(status: PlaybackStatus) {
+    this.#lastStatus = status;
+    this.resendStatus();
+  }
+
+  updateLoopFlag() {
     if (this.doStop) {
-      this.startPlayback();
-    } else {
-      this.stopPlayback();
+      this.#lastStatus.looping = this.loop;
+      this.resendStatus();
     }
+  }
+
+  resendStatus() {
+    this.#statusCb(this.#lastStatus);
   }
 
   setStatusCallback(cb: (e: PlaybackStatus) => void) {
@@ -136,45 +165,59 @@ class VideoPlayer {
   }
 }
 
-let canvas: HTMLImageElement;
-let player: VideoPlayer;
-window.addEventListener("DOMContentLoaded", () => {
-  canvas = document.querySelector("img#contentFrame");
-  player = new VideoPlayer(canvas);
-  (window as any).player = player;
-  let fileReader = new FileReader();
-  fileReader.onload = (e) => {
-    let data = e.target.result as ArrayBuffer;
-    let mainChunk = new ListChunk(new Uint8Array(data), true);
-    player.loadFile(extractImportantFromParsed(mainChunk));
-  };
+function initMain() {
+  let canvas: HTMLImageElement;
+  let player: VideoPlayer;
+  let controls: Window;
+  window.addEventListener("DOMContentLoaded", () => {
+    canvas = document.querySelector("img#contentFrame");
+    player = new VideoPlayer(canvas);
+    (window as any).player = player;
 
-  // Add event handler for changing input file
-  document
-    .querySelector("input[type=file]#filePicker")
-    .addEventListener("change", (e) => {
-      let files = (e.target as HTMLInputElement).files;
-      if (files.length === 1) {
-        fileReader.abort();
-        let file = files[0];
-        fileReader.readAsArrayBuffer(file);
+    addEventListener("message", (e) => {
+      if (e.data.type === "command") {
+        switch (e.data.data) {
+          case "pause":
+            player.pause();
+            break;
+          case "play":
+            player.play();
+            break;
+          case "unloop":
+            player.loop = false;
+            player.updateLoopFlag();
+            break;
+          case "loop":
+            player.loop = true;
+            player.updateLoopFlag();
+            break;
+        }
+      } else if (e.data.type === "statusUpdate") {
+        player.resendStatus();
+      } else if (e.data.type === "transferFile") {
+        let mainChunk = new ListChunk(e.data.data, true);
+        player.loadFile(extractImportantFromParsed(mainChunk));
       }
     });
 
-  const playPauseButton = document.querySelector("button#playPause");
-  playPauseButton
-    .addEventListener("click", player.playPause.bind(player));
-  
-  const progressInfo = document.querySelector("span#progressInfo");
+    player.setStatusCallback((e) => {
+      if (controls) {
+        controls.postMessage({ type: "status", data: e });
+      }
+    });
 
-  function formatTime(timeMs: number) {
-    let seconds = Math.floor(timeMs/1000) % 60;
-    let minutes = Math.floor(timeMs/1000/60);
-    return minutes+":"+seconds.toString().padStart(2, "0");
-  }
-
-  player.setStatusCallback((e) => {
-    playPauseButton.innerHTML = e.playing ? "Pause" : "Play"
-    progressInfo.innerHTML = formatTime(e.currentTime) + "/" + formatTime(e.completedTime);
-  })
-});
+    function openControls() {
+      controls = window.open(
+        "?controls",
+        "controls",
+        "popup width=400 height=100",
+      );
+    }
+    window.addEventListener("dblclick", openControls);
+  });
+}
+if (location.search === "?controls") {
+  initControls();
+} else {
+  initMain();
+}
