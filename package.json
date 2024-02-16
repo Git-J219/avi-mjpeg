@@ -1,0 +1,21 @@
+{
+  "name": "avimjpeg",
+  "version": "1.0.0",
+  "description": "",
+  "private": "true",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "dev": "webpack --mode=development",
+    "build": "webpack"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "html-webpack-plugin": "5.6.0",
+    "ts-loader": "9.5.1",
+    "typescript": "5.3.3",
+    "webpack": "5.90.1",
+    "webpack-cli": "5.1.4"
+  }
+}
