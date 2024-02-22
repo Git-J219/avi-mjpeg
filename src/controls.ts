@@ -21,7 +21,7 @@ export function initControls() {
       }
     });
     addEventListener("DOMContentLoaded", (e) => {
-      opener.postMessage({ type: "statusUpdate" });
+      opener.postMessage({ type: "statusUpdate" }, "*");
       playPauseButton = document.querySelector("button#playPause");
       loopButton = document.querySelector("button#loop");
       singleStepBack = document.querySelector("button#singleStepBack");
@@ -35,28 +35,28 @@ export function initControls() {
       playPauseButton.addEventListener("click", (e) => {
         if (status) {
           if (status.playing)
-            mainWindow.postMessage({ type: "command", data: "pause" });
-          else mainWindow.postMessage({ type: "command", data: "play" });
+            mainWindow.postMessage({ type: "command", data: "pause" }, "*");
+          else mainWindow.postMessage({ type: "command", data: "play" }, "*");
         }
       });
       loopButton.addEventListener("click", (e) => {
         if (status) {
           if (status.looping)
-            mainWindow.postMessage({ type: "command", data: "unloop" });
-          else mainWindow.postMessage({ type: "command", data: "loop" });
+            mainWindow.postMessage({ type: "command", data: "unloop" }, "*");
+          else mainWindow.postMessage({ type: "command", data: "loop" }, "*");
         }
       });
       singleStepBack.addEventListener("click", (e) => {
         if (status) {
           if (!status.playing) {
-            mainWindow.postMessage({ type: "command", data: "stepBack" });
+            mainWindow.postMessage({ type: "command", data: "stepBack" }, "*");
           }
         }
       });
       singleStepForewards.addEventListener("click", (e) => {
         if (status) {
           if (!status.playing) {
-            mainWindow.postMessage({ type: "command", data: "stepForewards" });
+            mainWindow.postMessage({ type: "command", data: "stepForewards" }, "*");
           }
         }
       });
@@ -70,7 +70,7 @@ export function initControls() {
         let file = new Uint8Array(data);
         mainWindow.postMessage(
           { type: "transferFile", data: file },
-          { transfer: [file.buffer] }
+          { transfer: [file.buffer], targetOrigin: "*" }
         );
       };
 

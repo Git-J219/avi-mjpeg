@@ -214,7 +214,7 @@ function initMain() {
 
     player.setStatusCallback((e) => {
       if (controls) {
-        controls.postMessage({ type: "status", data: e });
+        controls.postMessage({ type: "status", data: e }, "*");
       }
     });
 
