@@ -21,14 +21,18 @@
       broken</noscript
     >
     <div class="main">
+      <span id="controlsInfo">Double-click to open controls</span>
       <img id="contentFrame" />
     </div>
     <div class="controls">
-      Controls page
+      Controls:<br>
       <span id="progress">0:00/0:00</span>
       <button id="playPause" type="button">Play</button>
       <button id="loop" type="button">Enable looping</button>
-      <input type="file" id="filePicker" />
+      <button id="singleStepBack" type="button">Single step back</button>
+      <button id="singleStepForewards" type="button">Single step forwards</button>
+      <button id="openFileButton" type="button">Open</button>
+      <input type="file" id="openFileInput" style="display:none;" />
     </div>
   </body>
 </html>

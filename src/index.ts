@@ -136,6 +136,12 @@ class VideoPlayer {
     }
   }
 
+  stepFrames(n: number) {
+    if (this.doStop) {
+      this.seek(this.#playbackTime + n * (this.#currentDescriptor.hdrl.mainHeader.microSecPerFrame / 1000));
+    }
+  }
+
   pause() {
     this.stopPlayback();
   }
@@ -191,6 +197,12 @@ function initMain() {
             player.loop = true;
             player.updateLoopFlag();
             break;
+          case "stepBack":
+            player.stepFrames(-1);
+            break;
+          case "stepForewards":
+            player.stepFrames(1);
+            break;
         }
       } else if (e.data.type === "statusUpdate") {
         player.resendStatus();
@@ -207,6 +219,7 @@ function initMain() {
     });
 
     function openControls() {
+      (document.querySelector("span#controlsInfo") as any).style.display = "none";
       controls = window.open(
         "?controls",
         "controls",

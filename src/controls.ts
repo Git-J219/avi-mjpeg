@@ -4,6 +4,10 @@ let mainWindow: Window;
 let status: PlaybackStatus;
 let playPauseButton: HTMLButtonElement;
 let loopButton: HTMLButtonElement;
+let singleStepBack: HTMLButtonElement;
+let singleStepForewards: HTMLButtonElement;
+let openFileButton: HTMLButtonElement;
+let openFileInput: HTMLInputElement;
 let progress: HTMLSpanElement;
 
 export function initControls() {
@@ -20,6 +24,12 @@ export function initControls() {
       opener.postMessage({ type: "statusUpdate" });
       playPauseButton = document.querySelector("button#playPause");
       loopButton = document.querySelector("button#loop");
+      singleStepBack = document.querySelector("button#singleStepBack");
+      singleStepForewards = document.querySelector(
+        "button#singleStepForewards"
+      );
+      openFileButton = document.querySelector("button#openFileButton");
+      openFileInput = document.querySelector("input#openFileInput");
       progress = document.querySelector("span#progress");
 
       playPauseButton.addEventListener("click", (e) => {
@@ -36,6 +46,23 @@ export function initControls() {
           else mainWindow.postMessage({ type: "command", data: "loop" });
         }
       });
+      singleStepBack.addEventListener("click", (e) => {
+        if (status) {
+          if (!status.playing) {
+            mainWindow.postMessage({ type: "command", data: "stepBack" });
+          }
+        }
+      });
+      singleStepForewards.addEventListener("click", (e) => {
+        if (status) {
+          if (!status.playing) {
+            mainWindow.postMessage({ type: "command", data: "stepForewards" });
+          }
+        }
+      });
+      openFileButton.addEventListener("click", (e) => {
+        openFileInput.click();
+      });
 
       let fileReader = new FileReader();
       fileReader.onload = (e) => {
@@ -43,20 +70,18 @@ export function initControls() {
         let file = new Uint8Array(data);
         mainWindow.postMessage(
           { type: "transferFile", data: file },
-          { transfer: [file.buffer] },
+          { transfer: [file.buffer] }
         );
       };
 
-      document
-        .querySelector("input[type=file]#filePicker")
-        .addEventListener("change", (e) => {
-          let files = (e.target as HTMLInputElement).files;
-          if (files.length === 1) {
-            fileReader.abort();
-            let file = files[0];
-            fileReader.readAsArrayBuffer(file);
-          }
-        });
+      openFileInput.addEventListener("change", (e) => {
+        let files = (e.target as HTMLInputElement).files;
+        if (files.length === 1) {
+          fileReader.abort();
+          let file = files[0];
+          fileReader.readAsArrayBuffer(file);
+        }
+      });
     });
     setInterval(() => {
       if (!window.opener) {
