@@ -56,7 +56,7 @@ export function initControls() {
       singleStepForewards.addEventListener("click", (e) => {
         if (status) {
           if (!status.playing) {
-            mainWindow.postMessage({ type: "command", data: "stepForewards" }, "*");
+            mainWindow.postMessage({ type: "command", data: "stepForwards" }, "*");
           }
         }
       });

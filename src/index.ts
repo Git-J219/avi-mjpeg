@@ -125,6 +125,8 @@ class VideoPlayer {
 
   seek(position: number) {
     this.#playbackTime = position;
+    if (this.#playbackTime < 0) this.#playbackTime = 0;
+    if (this.#playbackTime > this.#completedTime) this.#playbackTime = this.#completedTime;
     if (this.doStop) {
       this.displayFrameByTime(this.#playbackTime);
       this.sendStatus({
@@ -200,7 +202,7 @@ function initMain() {
           case "stepBack":
             player.stepFrames(-1);
             break;
-          case "stepForewards":
+          case "stepForwards":
             player.stepFrames(1);
             break;
         }
