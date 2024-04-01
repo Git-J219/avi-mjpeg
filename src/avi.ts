@@ -241,7 +241,7 @@ class moviListReader extends DefaultListReader {
   onChunk(chunk: Chunk) {
     if (chunk.chunkId === "LIST" && chunk instanceof ListChunk) {
       if (chunk.listType === "rec ") {
-        chunk.listReader.subChunks.forEach(this.onChunk);
+        chunk.listReader.subChunks.forEach(this.onChunk.bind(this));
       }
       return;
     }
